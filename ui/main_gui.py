@@ -242,7 +242,11 @@ class P2PChatApp(ctk.CTk):
                 # Let's rely on send_message UI logic for own 1-1 history, and ignore callback for own 1-1.
                 return 
             else:
-                target_key = source_ip
+                sender_port = msg.get("sender_port")
+                if sender_port:
+                    target_key = f"{source_ip}:{sender_port}"
+                else:
+                    target_key = source_ip
 
         if not target_key:
             return
@@ -287,7 +291,8 @@ class P2PChatApp(ctk.CTk):
                 self.on_log("Peer not found!")
                 return
             target_port = peer.get("port", 5000)
-            success = self.engine.send_message(self.selected_peer_ip, target_port, content)
+            target_ip = peer.get("ip") # Extract actual IP
+            success = self.engine.send_message(target_ip, target_port, content)
             
             if success:
                 # Store locally (Engine callback disabled for 1-1 to avoid ambiguity, so we store here)

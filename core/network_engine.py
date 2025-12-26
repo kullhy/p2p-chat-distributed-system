@@ -225,7 +225,8 @@ class P2PEngine:
                 "sender": self.username,
                 "content": content,
                 "timestamp": time.time(),
-                "lamport_clock": current_tick
+                "lamport_clock": current_tick,
+                "sender_port": self.tcp_port
             })
             sock.send(data.encode())
             sock.close()

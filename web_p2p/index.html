@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decentralized P2P Chat (WebRTC)</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">P2P</div>
+                <h2>Distributed<br>System</h2>
+            </div>
+            
+            <div class="my-identity">
+                <label>MY PEER ID</label>
+                <div class="id-display" onclick="copyId()">
+                    <span id="my-peer-id">Connecting...</span>
+                    <button class="copy-btn">COPY</button>
+                </div>
+                <div class="status-dot online"></div> <span id="status-text">Online</span>
+            </div>
+
+            <div class="connection-panel">
+                <label>CONNECT TO PEER</label>
+                <div class="input-group">
+                    <input type="text" id="target-id-input" placeholder="Enter remote Peer ID...">
+                    <button id="connect-btn">Connect</button>
+                </div>
+            </div>
+
+            <div class="peer-list-section">
+                <label>ACTIVE CONNECTIONS</label>
+                <ul id="peer-list">
+                    <!-- Peers will be added here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-info">
+                    <h3 id="current-peer-name">No active chat</h3>
+                    <div class="peer-status" id="chat-status">Wait for connection...</div>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messages-container">
+                <div class="welcome-screen">
+                    <h1>Decentralized Chat</h1>
+                    <p>Direct Browser-to-Browser Connection.</p>
+                    <p>No server stores your messages.</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="message-input" placeholder="Type a message..." disabled>
+                <button id="send-btn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
