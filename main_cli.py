@@ -4,7 +4,15 @@ import time
 import sys
 
 def main():
-    username = input("Enter username: ").strip()
+    if len(sys.argv) >= 2:
+        username = sys.argv[1]
+    else:
+        username = input("Enter username: ").strip()
+    
+    tcp_port = 6000
+    if len(sys.argv) >= 3:
+        tcp_port = int(sys.argv[2])
+
     if not username:
         print("Username required.")
         return
@@ -33,7 +41,11 @@ def main():
         "on_message": on_message
     }
 
-    engine = P2PEngine(username, callbacks=callbacks)
+    # Auto-assign UDP port based on TCP port for local testing
+    # If TCP is 6000, UDP is 7000. If TCP is 6001, UDP is 7001.
+    udp_port = 7000 + (tcp_port - 6000)
+    
+    engine = P2PEngine(username, tcp_port=tcp_port, udp_port=udp_port, callbacks=callbacks)
     engine.start()
 
     print(f"P2P Chat Started as {username}. Type '/peers' to list, or 'ip message' to chat.")
@@ -49,8 +61,8 @@ def main():
             
             if cmd == "/peers":
                 print("--- Peers ---")
-                for ip, info in engine.peers.items():
-                    print(f"{ip}: {info['username']} ({info['status']})")
+                for key, info in engine.peers.items():
+                    print(f"{key}: {info['username']} ({info['status']})")
                 print("-------------")
             elif cmd == "/exit":
                 print("Exiting...")
@@ -62,16 +74,25 @@ def main():
                     count = engine.send_group_message(content)
                     print(f"Sent to {count} peers.")
             else:
-                # Parse "IP content"
+                # Parse "IP content" or "IP:Port content"
                 parts = cmd.split(" ", 1)
                 if len(parts) < 2:
-                    print("Invalid format. Use: IP CONTENT")
+                    print("Invalid format. Use: IP CONTENT or IP:PORT CONTENT")
                     continue
                 
-                target_ip, content = parts
-                # Find port
-                peer = engine.peers.get(target_ip)
-                port = peer["port"] if peer else 6000
+                target, content = parts
+                
+                # Check if target is in peers (using key)
+                peer = engine.peers.get(target)
+                if peer:
+                     target_ip = peer.get("ip", target.split(":")[0])
+                     port = peer["port"]
+                elif ":" in target:
+                     target_ip, p = target.split(":")
+                     port = int(p)
+                else:
+                     target_ip = target
+                     port = 6000 # Default fallback
                 
                 if engine.send_message(target_ip, port, content):
                     print("Sent.")

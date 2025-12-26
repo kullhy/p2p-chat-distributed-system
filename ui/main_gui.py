@@ -109,8 +109,9 @@ class LoginWindow(ctk.CTkToplevel):
             self.destroy()
 
 class P2PChatApp(ctk.CTk):
-    def __init__(self):
+    def __init__(self, tcp_port=6000):
         super().__init__()
+        self.tcp_port = tcp_port
         
         self.title("Decentralized P2P Chat")
         self.geometry("1000x700")
@@ -177,7 +178,8 @@ class P2PChatApp(ctk.CTk):
             "on_peer_update": self.on_peer_update,
             "on_message": self.on_message
         }
-        self.engine = P2PEngine(username, callbacks=callbacks)
+        udp_port = 7000 + (self.tcp_port - 6000)
+        self.engine = P2PEngine(username, tcp_port=self.tcp_port, udp_port=udp_port, callbacks=callbacks)
         self.engine.start()
         self.title(f"Decentralized P2P Chat - {username} ({self.engine.local_ip})")
         

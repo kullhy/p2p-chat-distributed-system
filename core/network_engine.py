@@ -5,7 +5,7 @@ import time
 import uuid
 
 class P2PEngine:
-    def __init__(self, username, tcp_port=6000, callbacks=None):
+    def __init__(self, username, tcp_port=6000, udp_port=7000, callbacks=None):
         """
         callbacks: dict of callback functions
         {
@@ -16,7 +16,7 @@ class P2PEngine:
         """
         self.username = username
         self.tcp_port = tcp_port
-        self.udp_port = 5005
+        self.udp_port = udp_port
         self.peers = {}  # {ip: {"username": name, "port": port, "last_seen": time}}
         self.messages = [] 
         self.callbacks = callbacks or {}
@@ -64,7 +64,9 @@ class P2PEngine:
                     "user": self.username, 
                     "port": self.tcp_port
                 })
-                sock.sendto(data.encode(), ('255.255.255.255', self.udp_port))
+                # Broadcast to a range of ports for local simulation
+                for p in range(7000, 7010): # Broadcast to 7000-7009
+                    sock.sendto(data.encode(), ('255.255.255.255', p))
                 time.sleep(5)
             except Exception as e:
                 self._log(f"Broadcast error: {e}")
@@ -72,6 +74,14 @@ class P2PEngine:
 
     def _udp_listener(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Enable Reuse Port for local testing (multiple apps on same machine)
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        except AttributeError:
+            # SO_REUSEPORT might not be available on all OS (e.g. Windows)
+            pass
+
         # Bind to 0.0.0.0 to receive broadcasts
         try:
             sock.bind(('0.0.0.0', self.udp_port))
@@ -84,32 +94,35 @@ class P2PEngine:
                 data, addr = sock.recvfrom(4096)
                 sender_ip = addr[0]
                 
-                # Ignore own broadcast
-                if sender_ip == self.local_ip:
-                    continue
-
                 info = json.loads(data.decode())
                 if info.get("type") == "HELLO":
                     username = info.get("user", "Unknown")
                     port = info.get("port", 5000)
                     
-                # Check previous status to trigger update if coming back online
-                is_new = sender_ip not in self.peers
-                prev_status = self.peers[sender_ip]["status"] if not is_new else None
-                
-                self.peers[sender_ip] = {
-                    "username": username,
-                    "port": port,
-                    "last_seen": time.time(),
-                    "status": "Online"
-                }
-                
-                if is_new:
-                    self._log(f"Found peer: {username} ({sender_ip})")
-                    self._notify_peer_update()
-                elif prev_status == "Offline":
-                    self._log(f"Peer {username} back online")
-                    self._notify_peer_update()
+                    # Ignore own broadcast
+                    if sender_ip == self.local_ip and port == self.tcp_port:
+                        continue
+
+                    peer_key = f"{sender_ip}:{port}"
+
+                    # Check previous status to trigger update if coming back online
+                    is_new = peer_key not in self.peers
+                    prev_status = self.peers[peer_key]["status"] if not is_new else None
+                    
+                    self.peers[peer_key] = {
+                        "ip": sender_ip,
+                        "username": username,
+                        "port": port,
+                        "last_seen": time.time(),
+                        "status": "Online"
+                    }
+                    
+                    if is_new:
+                        self._log(f"Found peer: {username} ({peer_key})")
+                        self._notify_peer_update()
+                    elif prev_status == "Offline":
+                        self._log(f"Peer {username} back online")
+                        self._notify_peer_update()
 
             except Exception as e:
                 self._log(f"UDP Listen error: {e}")
@@ -210,10 +223,12 @@ class P2PEngine:
         sent_count = 0
         current_time = time.time()
         # Duyệt qua danh sách peers (copy keys để tránh lỗi runtime khi dict thay đổi)
-        for ip, info in list(self.peers.items()):
+        for key, info in list(self.peers.items()):
             # Kiểm tra xem Peer còn online không (trong vòng 30s qua)
             if current_time - info['last_seen'] < 30:
-                success = self.send_message(ip, info['port'], content, msg_type="GROUP")
+                # Use stored IP in info, or parse key
+                target_ip = info.get("ip", key.split(":")[0])
+                success = self.send_message(target_ip, info['port'], content, msg_type="GROUP")
                 if success:
                     sent_count += 1
             else:
