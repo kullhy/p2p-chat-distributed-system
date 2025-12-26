@@ -21,6 +21,11 @@ class P2PEngine:
         self.messages = [] 
         self.callbacks = callbacks or {}
         self.running = False
+        
+        # [Distributed System Concept] Lamport Logical Clock
+        # Used for partial ordering of events in a distributed system without a central clock.
+        self.logical_clock = 0 
+        self.clock_lock = threading.Lock()
 
     def _log(self, message):
         if "on_log" in self.callbacks:
@@ -153,6 +158,18 @@ class P2PEngine:
         if "on_peer_update" in self.callbacks:
             self.callbacks["on_peer_update"](self.peers)
 
+    def _increment_clock(self):
+        """Thread-safe increment of logical clock (Internal Event or Send Event)"""
+        with self.clock_lock:
+            self.logical_clock += 1
+            return self.logical_clock
+
+    def _update_clock(self, received_time):
+        """Update logical clock on Receive Event: max(local, received) + 1"""
+        with self.clock_lock:
+            self.logical_clock = max(self.logical_clock, received_time) + 1
+            return self.logical_clock
+
     def _tcp_listener(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -176,6 +193,12 @@ class P2PEngine:
                 data = conn.recv(4096)
                 if data:
                     msg = json.loads(data.decode())
+                    
+                    # [Distributed System] Synchronization Step
+                    # Updates local clock based on message's timestamp to maintain causal order
+                    remote_clock = msg.get("lamport_clock", 0)
+                    self._update_clock(remote_clock)
+                    
                     # Add sender IP if not present or just for reference
                     msg["source_ip"] = addr[0]
                     self.messages.append(msg)
@@ -193,12 +216,16 @@ class P2PEngine:
             sock.settimeout(5)
             sock.connect((target_ip, target_port))
             
+            # [Distributed System] Tick before Send
+            current_tick = self._increment_clock()
+            
             data = json.dumps({
                 "type": msg_type,
                 "msg_id": str(uuid.uuid4()),
                 "sender": self.username,
                 "content": content,
-                "timestamp": time.time()
+                "timestamp": time.time(),
+                "lamport_clock": current_tick
             })
             sock.send(data.encode())
             sock.close()
@@ -209,6 +236,7 @@ class P2PEngine:
                     "sender": self.username,   # Me
                     "content": content,
                     "timestamp": time.time(),
+                    "lamport_clock": current_tick, # Own clock at send time
                     "source_ip": "me",         # Marker for UI
                     "type": msg_type
                 })
@@ -242,6 +270,7 @@ class P2PEngine:
                 "sender": self.username,
                 "content": content,
                 "timestamp": time.time(),
+                "lamport_clock": self.logical_clock, # Current clock
                 "source_ip": "me",
                 "type": "GROUP"
             })

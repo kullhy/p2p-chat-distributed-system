@@ -254,8 +254,8 @@ class P2PChatApp(ctk.CTk):
         # For now just append
         self.chat_history[target_key].append(msg)
         
-        # Sort by timestamp (Lamport/consistency requirement)
-        self.chat_history[target_key].sort(key=lambda x: x.get("timestamp", 0))
+        # Sort by Lamport Clock (Causal Order), then Timestamp
+        self.chat_history[target_key].sort(key=lambda x: (x.get("lamport_clock", 0), x.get("timestamp", 0)))
 
         # Refresh if looking at it
         if self.selected_peer_ip == target_key:
