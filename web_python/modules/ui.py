@@ -120,13 +120,16 @@ class UIManager:
         self.elements['msg_box'].innerHTML = '<div class="welcome-hero"><h2>Chat Cleared</h2></div>'
 
     def show_toast(self, msg):
-        # Assuming toast element exists or created dynamically. Main HTML has one.
         toast = self.doc.getElementById('toast')
-        if toast:
-            toast.innerText = msg
-            toast.className = 'toast'
-            # Simple timeout workaround in python? Js setTimeout is better
-            js.setTimeout(create_proxy(lambda: setattr(toast, 'className', 'toast hidden')), 3000)
+        if not toast:
+            toast = self.doc.createElement('div')
+            toast.id = 'toast'
+            toast.className = 'toast hidden'
+            self.doc.body.appendChild(toast)
+
+        toast.innerText = msg
+        toast.className = 'toast'
+        js.setTimeout(create_proxy(lambda: setattr(toast, 'className', 'toast hidden')), 3000)
 
     def bind_events(self, on_send, on_connect, on_copy):
         # Send

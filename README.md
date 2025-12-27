@@ -65,6 +65,15 @@ Hệ thống sử dụng cơ chế **"First-Come, First-Served Leader Election"*
 Truy cập đường dẫn Vercel của dự án:
 > `https://[your-project].vercel.app`
 
+## 🧠 Lưu ý quan trọng khi test “khác mạng không connect”
+
+Hệ thống dùng **WebRTC DataChannel**, nên sau khi “gặp nhau” qua **PeerJS Cloud (signaling)**, 2 máy vẫn phải vượt qua **NAT/Firewall** để tạo kênh P2P.
+
+- **Nếu chỉ có STUN**: nhiều mạng (4G/5G, công ty, NAT đối xứng…) sẽ **không bắt tay được**, nên bạn sẽ thấy “không connect vào phiên host”.
+- **Cách xử lý chuẩn**: thêm **TURN server** để relay khi P2P trực tiếp fail.
+
+Dự án đã được bổ sung cấu hình TURN fallback trong `web_python/main.py` (ICE servers). Khi gặp lỗi, UI sẽ hiện toast kiểu “Conn error …” để bạn biết đang fail ở tầng kết nối.
+
 ### Cách 2: Chạy Local (Phát triển)
 Yêu cầu: Python 3.x đã cài đặt.
 

@@ -24,6 +24,22 @@ CONFIG = {
                 {'urls': 'stun:stun2.l.google.com:19302'},
                 {'urls': 'stun:stun3.l.google.com:19302'},
                 {'urls': 'stun:stun4.l.google.com:19302'},
+                {'urls': 'stun:stun.relay.metered.ca:80'},
+                {
+                    'urls': 'turn:openrelay.metered.ca:80',
+                    'username': 'openrelayproject',
+                    'credential': 'openrelayproject',
+                },
+                {
+                    'urls': 'turn:openrelay.metered.ca:443',
+                    'username': 'openrelayproject',
+                    'credential': 'openrelayproject',
+                },
+                {
+                    'urls': 'turns:openrelay.metered.ca:443',
+                    'username': 'openrelayproject',
+                    'credential': 'openrelayproject',
+                },
             ]
         }
     }
@@ -53,6 +69,7 @@ class Main:
         self.base.on_conn_open_callback = self.on_connection_open
         self.base.on_conn_close_callback = self.on_connection_close
         self.base.on_data_callback = self.on_incoming_data
+        self.base.on_conn_error_callback = self.on_connection_error
         
         # GLOBAL EVENTS
         self.global_chat.on_user_list_update = self.on_user_list_updated
@@ -119,6 +136,15 @@ class Main:
     def on_connection_close(self, peer_id):
         if self.base.is_host:
             self.global_chat.on_host_disconnect(peer_id)
+        self.ui.show_toast(f"Disconnected: {peer_id[-6:]}")
+
+    def on_connection_error(self, peer_id, err):
+        try:
+            etype = err.type
+        except Exception:
+            etype = "conn-error"
+        self.ui.elements['chat_status'].textContent = f"Connection error: {etype}"
+        self.ui.show_toast(f"Conn error ({etype}) with {peer_id[-6:]}")
 
     # --- UI LOGIC ---
     def on_user_list_updated(self, users):

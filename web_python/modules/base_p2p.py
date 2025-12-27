@@ -17,6 +17,7 @@ class BaseP2P:
         self.on_data_callback = None
         self.on_conn_close_callback = None
         self.on_conn_open_callback = None
+        self.on_conn_error_callback = None
         self.on_error_callback = None
         
         # Proxies (keep refs)
@@ -47,7 +48,7 @@ class BaseP2P:
             return self.connections[target_id]
         
         print(f"Connecting to {target_id}...")
-        conn = self.peer.connect(target_id)
+        conn = self.peer.connect(target_id, js.JSON.parse('{"reliable": true}'))
         
         # KEY FIX: Store in pending to prevent Garbage Collection
         self.pending_connections.append(conn)
@@ -143,3 +144,5 @@ class BaseP2P:
                 self.pending_connections.remove(conn)
         except ValueError:
             pass
+        if self.on_conn_error_callback:
+            self.on_conn_error_callback(conn.peer, err)
