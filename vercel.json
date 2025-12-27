@@ -1,15 +1,17 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "web_p2p/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
+      "source": "/",
+      "destination": "/web_python/index.html"
+    },
     {
-      "src": "/(.*)",
-      "dest": "/web_p2p/$1"
+      "source": "/(modules/.*)",
+      "destination": "/web_python/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/web_python/$1"
     }
   ]
 }
