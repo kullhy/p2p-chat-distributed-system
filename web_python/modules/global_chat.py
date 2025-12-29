@@ -13,6 +13,10 @@ class GlobalChat:
         self.on_message_received = None # For UI
         
         self.heartbeat_interval = None
+        
+        # History
+        self.message_history = []
+        self.max_history = 50
 
     # --- HOST LOGIC ---
     def start_host(self):
@@ -31,9 +35,19 @@ class GlobalChat:
         if not any(u['id'] == peer_id for u in self.known_users):
             self.known_users.append({'id': peer_id, 'status': 'online'})
             self.broadcast_list()
+            # Send history to new user
+            self.base.send(peer_id, {
+                'type': 'HISTORY_SYNC', 
+                'messages': self.message_history
+            })
         else:
             # Send list just to him
             self.base.send(peer_id, {'type': 'USER_LIST', 'users': self.known_users})
+            # Also send history if re-connecting
+            self.base.send(peer_id, {
+                'type': 'HISTORY_SYNC', 
+                'messages': self.message_history
+            })
     
     def on_host_disconnect(self, peer_id):
         exists = any(u['id'] == peer_id for u in self.known_users)
@@ -51,6 +65,11 @@ class GlobalChat:
 
     def on_host_data(self, sender_id, data):
         if data['type'] == 'GLOBAL_CHAT':
+            # Add to history
+            self.message_history.append(data)
+            if len(self.message_history) > self.max_history:
+                self.message_history.pop(0)
+
             # Broadcast to everyone else
             self.base.broadcast(data, exclude_id=sender_id)
             # Notify local UI
@@ -98,6 +117,18 @@ class GlobalChat:
             if self.on_user_list_update:
                 self.on_user_list_update(self.known_users)
         
+        elif dtype == 'HISTORY_SYNC':
+            messages = data.get('messages', [])
+            for msg in messages:
+                if self.on_message_received:
+                    self.on_message_received({
+                        'sender': msg['sender'],
+                        'content': msg['content'],
+                        'direction': 'received' if msg['sender'] != self.base.my_id else 'sent',
+                        'scope': 'global',
+                        'timestamp': msg.get('timestamp', 0)
+                    })
+
         elif dtype == 'GLOBAL_CHAT':
             if self.on_message_received:
                 self.on_message_received({
@@ -118,6 +149,11 @@ class GlobalChat:
         }
         
         if self.base.is_host:
+            # Host adds own message to history
+            self.message_history.append(payload)
+            if len(self.message_history) > self.max_history:
+                self.message_history.pop(0)
+            
             self.base.broadcast(payload)
             # Local echo handled by return or callback?
             # Let's return the msg object to be rendered

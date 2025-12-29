@@ -65,6 +65,14 @@ Hệ thống sử dụng cơ chế **"First-Come, First-Served Leader Election"*
 Truy cập đường dẫn Vercel của dự án:
 > `https://[your-project].vercel.app`
 
+### Tạo “phiên của bạn” để máy khác không tự làm Host (Khuyên dùng)
+
+Mặc định dự án dùng 1 `LOBBY_ID` chung nên ai vào trước sẽ làm Host. Để **máy khác join đúng phiên của bạn**, hãy dùng `room`:
+
+- Mở trên máy bạn (Host):
+  - `https://[your-project].vercel.app/?room=my_room_123`
+- Gửi đúng link đó cho người khác mở (Client).
+
 ## 🧠 Lưu ý quan trọng khi test “khác mạng không connect”
 
 Hệ thống dùng **WebRTC DataChannel**, nên sau khi “gặp nhau” qua **PeerJS Cloud (signaling)**, 2 máy vẫn phải vượt qua **NAT/Firewall** để tạo kênh P2P.
