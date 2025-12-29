@@ -47,12 +47,12 @@ CONFIG = {
 
 class Main:
     def __init__(self):
-        self.config = CONFIG
+        self.config = self._build_runtime_config(CONFIG)
         
         # Initialize Modules
         self.ui = UIManager()
-        self.base = BaseP2P(CONFIG['PEER_CONFIG'])
-        self.global_chat = GlobalChat(self.base, CONFIG)
+        self.base = BaseP2P(self.config['PEER_CONFIG'])
+        self.global_chat = GlobalChat(self.base, self.config)
         self.private_chat = PrivateChat(self.base)
         
         # State
@@ -62,6 +62,24 @@ class Main:
         # Wiring
         self.setup_wiring()
         self.start_app()
+
+    def _build_runtime_config(self, base_config):
+        cfg = dict(base_config)
+        room = None
+        try:
+            params = js.URLSearchParams.new(js.window.location.search)
+            room = params.get('room')
+        except Exception:
+            pass
+
+        if room:
+            safe = ''.join([c for c in str(room) if c.isalnum() or c in ['-', '_']])[:32]
+            if safe:
+                cfg['LOBBY_ID'] = f"httt2025-{safe}-master-node"
+                cfg['APP_NAMESPACE'] = f"httt2025-{safe}-user-"
+        
+        print(f"Current Config: LOBBY_ID={cfg['LOBBY_ID']}")
+        return cfg
 
     def setup_wiring(self):
         # BASE EVENTS
@@ -94,16 +112,23 @@ class Main:
         def error_handler(err):
             if err.type == 'unavailable-id':
                 print("Host ID taken. Switching to Client...")
-                random_id = f"{CONFIG['APP_NAMESPACE']}{random.randint(1000,99999)}"
+                random_id = f"{self.config['APP_NAMESPACE']}{random.randint(1000,99999)}"
                 # We need to destroy old peer and init new
                 self.base.destroy()
                 # Init as Client
                 self.base.init_peer(random_id, is_host_mode=False)
+            else:
+                try:
+                    etype = err.type
+                except Exception:
+                    etype = "peer-error"
+                self.ui.elements['chat_status'].textContent = f"Peer error: {etype}"
+                self.ui.show_toast(f"Peer error: {etype}")
         
         self.base.on_error_callback = error_handler
 
         try:
-            self.base.init_peer(CONFIG['LOBBY_ID'], is_host_mode=True)
+            self.base.init_peer(self.config['LOBBY_ID'], is_host_mode=True)
         except Exception as e:
             print(f"Init Exception: {e}")
 
@@ -125,7 +150,7 @@ class Main:
 
     def on_incoming_data(self, sender_id, data):
         dtype = data.get('type')
-        if dtype in ['GLOBAL_CHAT', 'USER_LIST', 'LOGIN']:
+        if dtype in ['GLOBAL_CHAT', 'USER_LIST', 'LOGIN', 'HISTORY_SYNC']:
             if self.base.is_host:
                 self.global_chat.on_host_data(sender_id, data)
             else:
@@ -148,7 +173,13 @@ class Main:
 
     # --- UI LOGIC ---
     def on_user_list_updated(self, users):
-        self.ui.render_peer_list(users, self.base.my_id, self.active_chat, CONFIG['LOBBY_ID'], CONFIG['APP_NAMESPACE'])
+        self.ui.render_peer_list(
+            users,
+            self.base.my_id,
+            self.active_chat,
+            self.config['LOBBY_ID'],
+            self.config['APP_NAMESPACE']
+        )
 
     def on_chat_message(self, msg):
         self.store_and_render('GLOBAL_CHAT', msg)
@@ -179,11 +210,11 @@ class Main:
         self.history[chat_id].append(msg)
         
         if self.active_chat == chat_id:
-            self.ui.append_message(msg, self.base.my_id, CONFIG['APP_NAMESPACE'])
+            self.ui.append_message(msg, self.base.my_id, self.config['APP_NAMESPACE'])
 
     def switch_chat_context(self, chat_id):
         self.active_chat = chat_id
-        self.ui.update_chat_header(chat_id, CONFIG['LOBBY_ID'], CONFIG['APP_NAMESPACE'])
+        self.ui.update_chat_header(chat_id, self.config['LOBBY_ID'], self.config['APP_NAMESPACE'])
         
         # Render History
         self.ui.elements['msg_box'].innerHTML = ''
@@ -192,7 +223,7 @@ class Main:
             self.ui.clear_messages()
             return
         for m in msgs:
-            self.ui.append_message(m, self.base.my_id, CONFIG['APP_NAMESPACE'])
+            self.ui.append_message(m, self.base.my_id, self.config['APP_NAMESPACE'])
 
     def user_manual_connect(self, event):
         target = self.ui.elements['target_input'].value.strip()
