@@ -10,6 +10,10 @@
 
 Hệ thống loại bỏ nhu cầu về Backend Server lưu trữ tin nhắn, đảm bảo tính riêng tư và khả năng hoạt động độc lập của mạng lưới người dùng.
 
+## Báo cáo
+
+[Báo cáo](https://docs.google.com/document/d/1IQNeMO1t5NolPEdehrXDW6q79oNTa87qrR96NHm95Hs/edit?usp=sharing)
+
 ---
 
 ## 🏗 Kiến Trúc Hệ Thống (Architecture)
@@ -87,7 +91,7 @@ Yêu cầu: Python 3.x đã cài đặt.
 
 1.  Clone repository:
     ```bash
-    git clone https://github.com/your-repo/nexus-p2p.git
+    git clone https://github.com/kullhy/p2p-chat-distributed-system.git
     cd nexus-p2p
     ```
 2.  Khởi động HTTP Server cục bộ:
@@ -110,5 +114,3 @@ Yêu cầu: Python 3.x đã cài đặt.
     *   Hệ thống hoạt động tốt nhất với nhóm < 50 người (do giới hạn băng thông của Browser Host).
     *   Mô hình Private Chat có khả năng mở rộng không giới hạn (do là kết nối trực tiếp).
 
----
-*Developed by Nexus Team - Google Deepmind Agent*
