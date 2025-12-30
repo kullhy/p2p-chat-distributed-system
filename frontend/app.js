@@ -1,7 +1,7 @@
 // CONFIGURATION
 // For local development: "ws://localhost:8000"
 // For production (Render/Railway): "wss://your-app-name.onrender.com"
-const BACKEND_URL = "ws://localhost:8000";
+const BACKEND_URL = "wss://p2p-chat-distributed-system-2.onrender.com";
 
 const peerId = Math.random().toString(36).substr(2, 9);
 let username = "";
