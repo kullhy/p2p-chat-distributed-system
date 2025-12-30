@@ -8,39 +8,67 @@ let lastPeers = [];
 
 console.log("[UI-INIT] PeerID:", peerId);
 
-const loc = window.location;
-const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
-// Backend chạy port 8000, Frontend chạy port 3000 -> ta ghép hostname với port 8000
-const backendUrl = `${wsProtocol}//${loc.hostname}:8000`;
+// Global socket variables (initialized on Join)
+let globalSocket = null;
+let signalingSocket = null;
 
-console.log("[CONFIG] Backend URL:", backendUrl);
-
-// Khởi tạo Socket với địa chỉ động
-const globalSocket = new SocketClient(`${backendUrl}/ws/global`, peerId,
-    handleGlobalMessage,
-    (isOnline) => {
-        const statusEl = document.getElementById('connection-status');
-        if (statusEl) {
-            statusEl.innerText = isOnline ? "Global: Online" : "Global: Offline";
-            statusEl.className = isOnline ? "status-online" : "status-offline";
-        }
-    }
-);
-
-const signalingSocket = new SocketClient(`${backendUrl}/ws/signaling`, peerId, handleSignalingMessage);
+// Initialize with default or empty
+// const loc = window.location;
+// const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+// const backendUrl = `${wsProtocol}//${loc.hostname}:8000`; // REMOVED auto-detection causing issues on Vercel
 
 document.getElementById('join-btn').onclick = async () => {
     username = document.getElementById('username-input').value.trim() || "User_" + peerId.substr(0, 3);
+
+    // Get backend URL from input or fallback
+    let backendUrl = document.getElementById('server-input').value.trim();
+    if (!backendUrl) {
+        // Fallback (only if input is cleared somehow, though we set default value in HTML)
+        const loc = window.location;
+        const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
+        backendUrl = `${wsProtocol}//${loc.hostname}:8000`;
+    }
+
+    // Remove trailing slash if present
+    backendUrl = backendUrl.replace(/\/$/, "");
+
+    console.log("[CONNECT] Connecting to:", backendUrl);
+
+    // Initialize Sockets
+    globalSocket = new SocketClient(`${backendUrl}/ws/global`, peerId,
+        handleGlobalMessage,
+        (isOnline) => {
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.innerHTML = isOnline ?
+                    '<i class="fa-solid fa-globe"></i> Global: Online' :
+                    '<i class="fa-solid fa-globe"></i> Global: Offline';
+                statusEl.className = `connection-pill ${isOnline ? "status-online" : "status-offline"}`;
+            }
+        }
+    );
+
+    signalingSocket = new SocketClient(`${backendUrl}/ws/signaling`, peerId, handleSignalingMessage);
+
+    const joinBtn = document.getElementById('join-btn');
+    const originalBtnText = joinBtn.innerHTML;
+    joinBtn.disabled = true;
+    joinBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Connecting...`;
+
     try {
         await globalSocket.connect();
         await signalingSocket.connect();
+
         globalSocket.send('register', { username }, null, peerId);
+
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         document.getElementById('display-id').innerText = peerId;
     } catch (e) {
         console.error(e);
-        alert("Connection failed! Make sure Backend is running on 0.0.0.0");
+        alert(`Connection failed to ${backendUrl}\n\n1. Check if backend is running.\n2. If on Vercel (HTTPS), you cannot connect to 'ws://localhost'. Use 'wss://' or run Frontend locally.`);
+        joinBtn.disabled = false;
+        joinBtn.innerHTML = originalBtnText;
     }
 };
 
