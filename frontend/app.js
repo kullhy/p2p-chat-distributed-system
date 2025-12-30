@@ -20,17 +20,8 @@ let signalingSocket = null;
 document.getElementById('join-btn').onclick = async () => {
     username = document.getElementById('username-input').value.trim() || "User_" + peerId.substr(0, 3);
 
-    // Get backend URL from input or fallback
-    let backendUrl = document.getElementById('server-input').value.trim();
-    if (!backendUrl) {
-        // Fallback (only if input is cleared somehow, though we set default value in HTML)
-        const loc = window.location;
-        const wsProtocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
-        backendUrl = `${wsProtocol}//${loc.hostname}:8000`;
-    }
-
-    // Remove trailing slash if present
-    backendUrl = backendUrl.replace(/\/$/, "");
+    // Hardcoded to localhost per user request
+    let backendUrl = "ws://localhost:8000";
 
     console.log("[CONNECT] Connecting to:", backendUrl);
 
