@@ -1,49 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Hybrid Chat</title>
+    <title>HTTT2025</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-    <div id="setup-screen" class="modal">
-        <div class="modal-content">
-            <h2>Enter Username</h2>
-            <input type="text" id="username-input" placeholder="e.g. Alice">
-            <button id="join-btn">Join Chat</button>
+
+    <!-- Setup / Login Screen -->
+    <div id="setup-screen" class="modal-overlay">
+        <div class="modal-card">
+            <div class="brand-logo">
+                <i class="fa-solid fa-network-wired"></i>
+            </div>
+            <h2>Welcome to HTTT2025</h2>
+            <p>Secure, distributed, direct.</p>
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="username-input" placeholder="Choose a nickname..." autocomplete="off">
+            </div>
+            <button id="join-btn">
+                <span>Join Network</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
         </div>
     </div>
 
+    <!-- Main App -->
     <div class="app-container hidden" id="main-app">
+
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h3>Online Peers</h3>
+                <div class="app-brand">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>HTTT2025</span>
+                </div>
             </div>
-            <ul id="peer-list"></ul>
-            <div class="my-status">
-                <p>ID: <span id="display-id"></span></p>
-                <div id="connection-status" class="status-offline">Global: Offline</div>
+
+            <div class="sidebar-section-label">Active Peers</div>
+            <ul id="peer-list" class="peer-list">
+                <!-- Javascript will populate this -->
+            </ul>
+
+            <div class="my-status-card">
+                <div class="status-info">
+                    <span class="status-label">My ID</span>
+                    <span id="display-id" class="id-badge">...</span>
+                </div>
+                <div id="connection-status" class="connection-pill status-offline">
+                    <i class="fa-solid fa-globe"></i> Offline
+                </div>
             </div>
         </aside>
 
+        <!-- Chat Area -->
         <main class="chat-area">
             <header class="chat-header">
-                <h2 id="chat-title">Global Chat</h2>
-                <div id="p2p-status"></div>
+                <div class="header-info">
+                    <h2 id="chat-title">Global Chat</h2>
+                    <div id="p2p-status" class="p2p-badge"></div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" title="Settings"><i class="fa-solid fa-gear"></i></button>
+                </div>
             </header>
 
-            <div id="messages-container" class="messages-container"></div>
+            <div id="messages-container" class="messages-container">
+                <!-- Messages will appear here -->
+                <div class="welcome-placeholder">
+                    <i class="fa-regular fa-comments"></i>
+                    <p>Start a conversation...</p>
+                </div>
+            </div>
 
             <form id="message-form" class="message-input-area">
-                <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
-                <button type="submit">Send</button>
+                <button type="button" class="attach-btn"><i class="fa-solid fa-paperclip"></i></button>
+                <div class="input-wrapper">
+                    <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
+                </div>
+                <button type="submit" class="send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </form>
         </main>
     </div>
+
+    <!-- Background Elements for Aesthetics -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
 
     <script src="websocket.js"></script>
     <script src="webrtc.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

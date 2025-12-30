@@ -3,7 +3,7 @@ let username = "";
 let currentChatPeer = null;
 
 const activeP2PConnections = {};
-const messageStore = {global: [], private: {}};
+const messageStore = { global: [], private: {} };
 let lastPeers = [];
 
 console.log("[UI-INIT] PeerID:", peerId);
@@ -34,7 +34,7 @@ document.getElementById('join-btn').onclick = async () => {
     try {
         await globalSocket.connect();
         await signalingSocket.connect();
-        globalSocket.send('register', {username}, null, peerId);
+        globalSocket.send('register', { username }, null, peerId);
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         document.getElementById('display-id').innerText = peerId;
@@ -78,14 +78,27 @@ async function handleSignalingMessage(data) {
 function updatePeerListUI() {
     const list = document.getElementById('peer-list');
     if (!list) return;
-    list.innerHTML = `<li class="peer-item ${!currentChatPeer ? 'active' : ''}" id="btn-global">Global Chat</li>`;
+
+    // Global Chat Item
+    list.innerHTML = `
+        <li class="peer-item ${!currentChatPeer ? 'active' : ''}" id="btn-global">
+            <div class="peer-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="peer-info">Global Chat</div>
+        </li>`;
+
     document.getElementById('btn-global').onclick = () => switchChat(null);
 
     lastPeers.forEach(p => {
         if (p.peerId === peerId) return;
         const li = document.createElement('li');
         li.className = `peer-item ${currentChatPeer === p.peerId ? 'active' : ''}`;
-        li.innerText = `${p.username} (${p.peerId.substr(0, 4)})`;
+        li.innerHTML = `
+            <div class="peer-icon"><i class="fa-solid fa-user"></i></div>
+            <div class="peer-info">
+                <span class="peer-name">${p.username}</span>
+                <span class="peer-id">#${p.peerId.substr(0, 4)}</span>
+            </div>
+        `;
         li.onclick = () => switchChat(p);
         list.appendChild(li);
     });
@@ -126,7 +139,7 @@ function initiateP2P(remoteId, isCaller) {
 
     const conn = new P2PConnection(peerId, remoteId, signalingSocket,
         (msg) => {
-            const msgWithSender = {...msg, from: remoteId};
+            const msgWithSender = { ...msg, from: remoteId };
             if (!messageStore.private[remoteId]) messageStore.private[remoteId] = [];
             messageStore.private[remoteId].push(msgWithSender);
             if (currentChatPeer === remoteId) renderMessage(msgWithSender);
@@ -174,7 +187,7 @@ function renderMessage(data) {
     const div = document.createElement('div');
     div.className = `msg ${isSelf ? 'self' : 'other'}`;
 
-    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const sender = isSelf ? "You" : (data.payload.sender || "Peer");
 
     div.innerHTML = `<div class="msg-info">${sender} • ${time}</div><div>${data.payload.text}</div>`;
@@ -188,7 +201,7 @@ document.getElementById('message-form').onsubmit = (e) => {
     const text = input.value.trim();
     if (!text) return;
 
-    const msgObj = {from: peerId, payload: {text, sender: username}};
+    const msgObj = { from: peerId, payload: { text, sender: username } };
 
     if (currentChatPeer) {
         const conn = activeP2PConnections[currentChatPeer];
