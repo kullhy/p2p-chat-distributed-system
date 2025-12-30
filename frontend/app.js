@@ -1,3 +1,8 @@
+// CONFIGURATION
+// For local development: "ws://localhost:8000"
+// For production (Render/Railway): "wss://your-app-name.onrender.com"
+const BACKEND_URL = "ws://localhost:8000";
+
 const peerId = Math.random().toString(36).substr(2, 9);
 let username = "";
 let currentChatPeer = null;
@@ -20,8 +25,8 @@ let signalingSocket = null;
 document.getElementById('join-btn').onclick = async () => {
     username = document.getElementById('username-input').value.trim() || "User_" + peerId.substr(0, 3);
 
-    // Hardcoded to localhost per user request
-    let backendUrl = "ws://localhost:8000";
+    // Use the configured BACKEND_URL
+    let backendUrl = BACKEND_URL;
 
     console.log("[CONNECT] Connecting to:", backendUrl);
 
@@ -57,7 +62,7 @@ document.getElementById('join-btn').onclick = async () => {
         document.getElementById('display-id').innerText = peerId;
     } catch (e) {
         console.error(e);
-        alert(`Connection failed to ${backendUrl}\n\n1. Check if backend is running.\n2. If on Vercel (HTTPS), you cannot connect to 'ws://localhost'. Use 'wss://' or run Frontend locally.`);
+        alert(`Connection failed to ${backendUrl}\n\n1. Check if backend is running.\n2. If on Vercel (HTTPS), you cannot connect to 'ws://localhost'. Update BACKEND_URL in app.js to your production WebSocket URL (wss://...).`);
         joinBtn.disabled = false;
         joinBtn.innerHTML = originalBtnText;
     }
