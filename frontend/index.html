@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Hybrid Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="setup-screen" class="modal">
+        <div class="modal-content">
+            <h2>Enter Username</h2>
+            <input type="text" id="username-input" placeholder="e.g. Alice">
+            <button id="join-btn">Join Chat</button>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="main-app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Online Peers</h3>
+            </div>
+            <ul id="peer-list"></ul>
+            <div class="my-status">
+                <p>ID: <span id="display-id"></span></p>
+                <div id="connection-status" class="status-offline">Global: Offline</div>
+            </div>
+        </aside>
+
+        <main class="chat-area">
+            <header class="chat-header">
+                <h2 id="chat-title">Global Chat</h2>
+                <div id="p2p-status"></div>
+            </header>
+
+            <div id="messages-container" class="messages-container"></div>
+
+            <form id="message-form" class="message-input-area">
+                <input type="text" id="msg-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="websocket.js"></script>
+    <script src="webrtc.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
